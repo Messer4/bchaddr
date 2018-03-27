@@ -16,7 +16,7 @@ import (
 * Translates the given address into cashaddr format.
 */
 
-	func toCashAddress (address string) (string, error) {
+	func ToCashAddress (address string) (string, error) {
 		prefix := "bitcoincash"
 		d,err := decodeAddress(address)
 		addr,err := encode(prefix,d.tp,d.hash)

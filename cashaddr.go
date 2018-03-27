@@ -175,7 +175,7 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 		payloadData := toUint5Array(concat(rt, hh))
 		tre := make([]uint8,8)
 		checksumData := concat(concat(prefixData, payloadData), tre)
-		payload := concat(payloadData, checksumToUint5Array(polymod(checksumData)))getHashSizeBits
+		payload := concat(payloadData, checksumToUint5Array(polymod(checksumData)))
 		enc,err := encodeCh(payload)
 		return prefix + ":" + enc,err
 	}

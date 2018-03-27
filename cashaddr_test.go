@@ -2,11 +2,10 @@ package bchaddr
 
 import(
 	"testing"
-	"log"
 	"errors"
 )
 
-func TestrEncode(t *testing.T) {
+func TestEncode(t *testing.T) {
 
 	var cases = []struct{
 		prefix string
@@ -21,7 +20,6 @@ func TestrEncode(t *testing.T) {
 
 	for _,req := range cases {
 		aqq, _ := encode(req.prefix, req.tp, req.hh)
-		log.Print(aqq)
 		if aqq != req.result {
 			err := errors.New("False result")
 			t.Errorf(err.Error())

@@ -3,7 +3,6 @@ package bchaddr
 import (
 	"github.com/Messer4/base58check"
 	"errors"
-	"log"
 	"github.com/thoas/go-funk"
 	"bytes"
 )
@@ -86,7 +85,6 @@ import (
 			hh=append(hh,uint8(t))
 		}
 		dec.hash = hh
-		log.Print(versByte)
 		switch versByte {
 		case 0:
 			dec.tp="P2PKH"

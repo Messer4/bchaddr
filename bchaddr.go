@@ -1,10 +1,9 @@
 package bchaddr
 
 import (
-	"github.com/Messer4/base58check"
+	"github.com/btcsuite/btcutil/base58"
 	"errors"
 	"github.com/thoas/go-funk"
-	"bytes"
 )
 
 	type decod struct {
@@ -62,11 +61,7 @@ import (
  */
 	func encodeAsLegacy (dec decod) (string) {
 		var versionByte = VERSION_BYTE[dec.network][dec.tp]
-		var buffer = bytes.Buffer{}
-		//Buffer.alloc(1 + len(dec.hash))
-		buffer.WriteByte(versionByte)
-		buffer.Write(dec.hash)
-		return base58check.Encode(buffer.Bytes())
+		return base58.CheckEncode(dec.hash,versionByte)
 	}
 
 /**
@@ -74,10 +69,11 @@ import (
  */
 
 	func decodeAddress(addr string) (dec decod,err error) {
-		a,err:=base58check.Decode(addr)
+		res,ver,err:=base58.CheckDecode(addr)
 		if err!=nil{
 			return dec,err
 		}
+		a:=concat([]uint8{ver},res)
 		versByte := a[0]
 		sl := a[1:]
 		var hh []uint8

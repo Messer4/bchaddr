@@ -9,10 +9,13 @@ package bchaddr
  * Original by Pieter Wuille: https://github.com/sipa/bech32.
  */
 
-	func convertBits(data []uint8, from uint64, to uint64) []uint8{
+	func convertBits(data []uint8, from uint64, to uint64, flag bool) (result []uint8, err error){
 		length := 34
+		if (flag){
+			length = 21
+		}
 		mask := uint64((1 << to) - 1)
-		result := make([]uint8,length)
+		result = make([]uint8,length)
 		index := 0
 		accumulator := uint64(0)
 		bits := uint64(0)
@@ -26,9 +29,13 @@ package bchaddr
 				index++
 			}
 		}
-		if (bits > 0) {
-			result[index] = uint8((accumulator << (to - bits)) & mask)
-			index++
+		if (!flag) {
+			if (bits > 0) {
+				result[index] = uint8((accumulator << (to - bits)) & mask)
+				index++
+			}
+		}else{
+			err = validate(bits < from && ((accumulator << (to - bits)) & mask) == 0,"Input cannot be converted to " + string(to) + " bits without padding, but strict mode was used.")
 		}
-		return result
+		return result,nil
 	}

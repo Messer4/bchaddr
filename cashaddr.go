@@ -11,6 +11,11 @@ import (
 
 var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 
+type dec struct {
+	prefix  string
+	tp      string
+	hash    []uint8
+}
 
 /**
  * Returns an array representation of the given checksum to be encoded
@@ -26,6 +31,33 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 			checksum = checksum.Rsh(checksum,uint(5))
 		}
 		return result
+	}
+
+/**
+* Retrieves the the length in bits of the encoded hash from its bit
+* representation within the version byte.
+*/
+	func getHashSize(versionByte uint8) int {
+		switch (versionByte & 7) {
+		case 0:
+			return 160
+		case 1:
+			return 192
+		case 2:
+			return 224
+		case 3:
+			return 256
+		case 4:
+			return 320
+		case 5:
+			return 384
+		case 6:
+			return 448
+		case 7:
+			return 512
+		default:
+			return -1
+		}
 	}
 
 /**
@@ -53,6 +85,26 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 			return 7
 		default:
 			return -1
+		}
+	}
+
+/**
+* Retrieves the address type from its bit representation within the
+* version byte.
+*
+* @private
+* @param {number} versionByte
+* @returns {string}
+* @throws {ValidationError}
+*/
+	func getType(versionByte uint8) string{
+		switch (versionByte & 120) {
+		case 0:
+			return "P2PKH"
+		case 8:
+			return "P2SH"
+		default:
+			return ""
 		}
 	}
 
@@ -93,9 +145,20 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 * right-padding with zeroes if necessary.
 */
 
-	func toUint5Array(data []uint8) []uint8 {
-		return convertBits(data, 8, 5)
+	func toUint5Array(data []uint8) ([]uint8,error) {
+		return convertBits(data, 8, 5,false)
 	}
+
+/**
+* Converts an array of 5-bit integers back into an array of 8-bit integers,
+* removing extra zeroes left from padding if necessary.
+* Throws a {@link ValidationError} if input is not a zero-padded array of 8-bit integers.
+*/
+
+	func fromUint5Array(data []uint8) ([]uint8,error) {
+		return convertBits(data, 5, 8, true)
+	}
+
 
 /**
  * Returns the concatenation a and b.
@@ -124,6 +187,16 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 
 	func hasSingleCase(str string) bool {
 		return str == strings.ToLower(str) || str == strings.ToUpper(str)
+	}
+
+/**
+ * Verify that the payload has not been corrupted by checking that the
+ * checksum is valid.
+ */
+	func validChecksum(prefix string, payload []uint8) bool {
+		prefixData := concat(prefixToUint5Array(prefix), []uint8{0})
+		checksumData := concat(prefixData, payload)
+		return reflect.DeepEqual(polymod(checksumData),big.NewInt(0))
 	}
 
 /**
@@ -164,7 +237,7 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 		res := prefixToUint5Array(prefix)
 		prefixData := concat(res,[]uint8{0})
 		if getTypeBits(tp) == -1 {
-			return "", errors.Errorf("Invalid type ", tp)
+			return "", errors.Errorf("Invalid type: ", tp)
 		}else{
 			if getHashSizeBits(hh) == -1 {
 				return "", errors.Errorf("Invalid hash size ",len(hh))
@@ -172,10 +245,36 @@ var VALID_PREFIXES = []string{"bitcoincash", "bchtest", "bchreg"}
 		}
 		versionByte := getTypeBits(tp) + getHashSizeBits(hh)
 		rt := []uint8{uint8(versionByte)}
-		payloadData := toUint5Array(concat(rt, hh))
+		payloadData,err := toUint5Array(concat(rt, hh))
 		tre := make([]uint8,8)
 		checksumData := concat(concat(prefixData, payloadData), tre)
 		payload := concat(payloadData, checksumToUint5Array(polymod(checksumData)))
 		enc,err := encodeCh(payload)
 		return prefix + ":" + enc,err
+	}
+
+
+/**
+* Decodes the given address into its constituting prefix, type and hash. See [#encode()]{@link encode}.
+*
+* @static
+* @param {string} address Address to decode. E.g.: 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'.
+* @returns {object}
+* @throws {ValidationError}
+*/
+	func decode(address string) (d dec ,err error){
+		err = validate(reflect.TypeOf(address).String() == "string" && hasSingleCase(address), "Invalid address: " + address + ".")
+		pieces := strings.Split(strings.ToLower(address),":")
+		err = validate(len(pieces) == 2, "Missing prefix: " + address + ".")
+		var prefix = pieces[0]
+		payload,err := decodeCh(pieces[1])
+		err = validate(validChecksum(prefix, payload), "Invalid checksum: " + address + ".")
+		payloadData,err := fromUint5Array(payload[0: len(payload)-8])
+		versionByte := payloadData[0]
+		hh := payloadData[1:]
+		err = validate(getHashSize(versionByte) == len(hh) * 8, "Invalid hash size: " + address + ".")
+		tp := getType(versionByte)
+		err = validate( tp != "", "Invalid address type in version byte: " + string(versionByte) + ".")
+
+		return dec{prefix,tp,hh},err
 	}

@@ -97,6 +97,10 @@ import (
 			dec.tp="P2PKH"
 			dec.network="testnet"
 			dec.format="legacy"
+		case 196:
+			dec.tp="P2SH"
+			dec.network="testnet"
+			dec.format="legacy"
 		default:
 			return dec,errors.New("Wrong versByte")
 		}

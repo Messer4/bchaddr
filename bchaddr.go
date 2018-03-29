@@ -24,35 +24,38 @@ import (
 * Translates the given address into cashaddr format.
 */
 
-	func ToCashAddress (address string) (string, error) {
+	func ToCashAddress (address string, flag bool) (string, error) {
 		var prefix string
 		//prefix:= "bchreg"
 		d,err := decodeAddress(address)
-		if d.network=="mainnet"{
-			prefix = "bitcoincash"
+		if !flag{
+			if d.network == "mainnet"{
+				prefix = "bitcoincash"
+			}else{
+				prefix = "bchtest"
+			}
 		}else{
-			prefix = "bchtest"
+			prefix = "bchreg"
 		}
-
 		addr,err := encode(prefix,d.tp,d.hash)
 		return addr,err
 	}
-
+/*
 	func ToCashAddressRGT (address string) (string, error) {
 			prefix:= "bchreg"
 		d,err := decodeAddress(address)
 		addr,err := encode(prefix,d.tp,d.hash)
 		return addr,err
-	}
+	}*/
 
 /**
 * Translates the given address into legacy format.
 */
 	func ToLegacyAddress (address string) (string,error) {
 		decoded,err := decodeCashAddress(address)
-	/*	if (decoded.format === Format.Legacy) {
-			return address
-		}*/
+		if (decoded.format == "legacy") {
+			return address,err
+		}
 		return encodeAsLegacy(decoded),err
 	}
 

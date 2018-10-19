@@ -16,7 +16,7 @@ import (
 	var VERSION_BYTE = map[string]map[string]byte{
 		"mainnet":{"P2PKH":0,"P2SH":5},
 		"testnet":{"P2PKH":111,"P2SH":196},
-		"regtest":{"P2PKH":111},
+		"regtest":{"P2PKH":111,"P2SH":196},
 		}
 
 

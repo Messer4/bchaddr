@@ -91,7 +91,7 @@ import (
 			dec.format="legacy"
 		case 5:
 			dec.tp="P2SH"
-			dec.network="testnet"
+			dec.network="mainnet"
 			dec.format="legacy"
 		case 111:
 			dec.tp="P2PKH"
